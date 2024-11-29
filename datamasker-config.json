@@ -1,0 +1,76 @@
+﻿{
+  "dataSource": {
+    "type": "SqlServer",
+    "config": {
+      "name": "MaskingDemo",
+      "userName": "your_username",
+      "password": "your_password",
+      "server": "localhost"
+    }
+  },
+  "tables": [
+    {
+      "name": "Users",
+      "schema": "dbo",
+      "primaryKeyColumn": "Id",
+      "columns": [
+        {
+          "name": "Name",
+          "type": "FirstName"
+        },
+        {
+          "name": "SSN",
+          "type": "Bogus",
+          "stringFormatPattern": "###-##-####"
+        },
+        {
+          "name": "Email",
+          "type": "EmailAddress"
+        },
+        {
+          "name": "Phone",
+          "type": "PhoneNumber"
+        }
+      ]
+    },
+    {
+      "name": "Accounts",
+      "schema": "dbo",
+      "primaryKeyColumn": "Id",
+      "columns": [
+        {
+          "name": "AccountNumber",
+          "type": "Bogus",
+          "stringFormatPattern": "{{finance.account}}"
+        },
+        {
+          "name": "CreditCard",
+          "type": "Bogus",
+          "stringFormatPattern": "{{finance.creditCard}}"
+        }
+      ]
+    },
+    {
+      "name": "Addresses",
+      "schema": "dbo",
+      "primaryKeyColumn": "Id",
+      "columns": [
+        {
+          "name": "StreetAddress",
+          "type": "Bogus",
+          "stringFormatPattern": "{{address.streetAddress}}"
+        },
+        {
+          "name": "City",
+          "type": "Bogus",
+          "stringFormatPattern": "{{address.city}}"
+        },
+        {
+          "name": "PostalCode",
+          "type": "Bogus",
+          "stringFormatPattern": "{{address.zipCode}}"
+        }
+      ]
+    }
+  ]
+}
