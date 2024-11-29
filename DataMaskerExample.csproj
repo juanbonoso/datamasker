@@ -17,17 +17,24 @@
 
   <ItemGroup>
     <None Remove="DatabaseSetup.sql" />
+    <None Remove="datamasker-config.json" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="DatabaseSetup.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="datamasker-config.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Bogus" Version="35.6.1" />
+    <PackageReference Include="Dapper" Version="2.1.35" />
     <PackageReference Include="DataMasker" Version="2.0.61" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
 </Project>

@@ -1,16 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using DataMasker;
-//using DataMasker.Configuration;
-//using Microsoft.Extensions.Logging;
+using DataMasker.Interfaces;
+using DataMasker.Models;
+using DataMasker.Utils;
 
-namespace DataMaskerExample
-{
-    class Program
+    internal class Program
     {
-        private const string ConnectionString = "Server=localhost;Database=Master;Trusted_Connection=True;";
+        private const string ConnectionString = "Server=localhost;Database=master;Trusted_Connection=True;";
+        private const string ConfigFilePath = "datamasker-config.json";
 
         static async Task Main(string[] args)
         {
@@ -20,7 +22,11 @@ namespace DataMaskerExample
                 Console.WriteLine("Creating and seeding the database...");
                 await CreateAndSeedDatabaseAsync();
 
-                // Step 2: Mask the Data
+                // Wait for the user to press a key before proceeding
+                Console.WriteLine("Press any key to start data masking...");
+                Console.ReadKey();
+
+                // Step 2: Mask the Sensitive Data
                 Console.WriteLine("Starting data masking...");
                 await MaskSensitiveDataAsync();
 
@@ -32,6 +38,9 @@ namespace DataMaskerExample
             }
         }
 
+        /// <summary>
+        /// Creates and seeds the database using a SQL script.
+        /// </summary>
         private static async Task CreateAndSeedDatabaseAsync()
         {
             string sqlFilePath = Path.Combine(AppContext.BaseDirectory, "DatabaseSetup.sql");
@@ -42,15 +51,10 @@ namespace DataMaskerExample
 
             string sqlScript = await File.ReadAllTextAsync(sqlFilePath);
 
-            // Split the script into batches by removing `GO` and separating by `USE`
-            var batches = sqlScript
-                .Split(new[] { "USE " }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(batch => (batch.StartsWith("MaskingDemo;") ? "USE " + batch : batch).Trim());
-
             using var connection = new SqlConnection(ConnectionString);
             await connection.OpenAsync();
 
-            foreach (var batch in batches)
+            foreach (string batch in sqlScript.Split(new[] { "GO" }, StringSplitOptions.RemoveEmptyEntries))
             {
                 using var command = new SqlCommand(batch, connection);
                 await command.ExecuteNonQueryAsync();
@@ -59,24 +63,53 @@ namespace DataMaskerExample
             Console.WriteLine("Database created and seeded successfully.");
         }
 
+        /// <summary>
+        /// Masks sensitive data based on the configuration file.
+        /// </summary>
         private static async Task MaskSensitiveDataAsync()
         {
-            //// Load configuration from JSON file
-            //string configPath = "datamasker-config.json";
-            //if (!File.Exists(configPath))
+            if (!File.Exists(ConfigFilePath))
+            {
+                throw new FileNotFoundException($"Configuration file '{ConfigFilePath}' not found.");
+            }
+
+            // Load configuration
+            Config config = Config.Load(ConfigFilePath);
+
+            // Initialize data providers
+            var dataProviders = new List<IDataProvider>
+            {
+                new BogusDataProvider(config.DataGeneration),
+                new SqlDataProvider(new SqlConnection(config.DataSource.GetConnectionString()))
+            };
+
+            IDataMasker dataMasker = new DataMasker.DataMasker(dataProviders);
+            IDataSource dataSource = DataSourceProvider.Provide(config.DataSource.Type, config.DataSource);
+
+            // Process each table in the configuration
+            foreach (TableConfig tableConfig in config.Tables)
+            {
+                Console.WriteLine($"Masking table: {tableConfig.Name}");
+
+                // Load data
+                IEnumerable<IDictionary<string, object>> rows = dataSource.GetData(tableConfig);
+
+                // Mask data and update rows in the database
+                var maskedRows = rows.Select(row => dataMasker.Mask(row, tableConfig));
+                dataSource.UpdateRows(maskedRows, maskedRows.Count(), tableConfig);
+
+                Console.WriteLine($"Finished masking table: {tableConfig.Name}");
+
+            #region update row by row
+
+            //foreach (var row in rows)
             //{
-            //    throw new Exception($"Configuration file '{configPath}' not found.");
+            //    //mask the data
+            //    var maskedRow = dataMasker.Mask(row, tableConfig);
+            //    dataSource.UpdateRow(maskedRow, tableConfig);
             //}
+            #endregion
 
-            //var config = await ConfigurationLoader.LoadConfiguration(configPath);
-
-            //// Set up logging
-            //using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            //var logger = loggerFactory.CreateLogger<Program>();
-
-            //// Create and run the DataMasker
-            //var dataMasker = new Masker(config, logger);
-            //await dataMasker.RunAsync();
         }
     }
 }
