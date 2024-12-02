@@ -28,7 +28,25 @@
         },
         {
           "name": "Phone",
-          "type": "PhoneNumber"
+          "type": "PhoneNumber",
+          "stringFormatPattern": "(###) ###-####"
+        }
+      ]
+    },
+    {
+      "name": "Accounts",
+      "schema": "dbo",
+      "primaryKeyColumn": "Id",
+      "columns": [
+        {
+          "name": "AccountNumber",
+          "type": "Bogus",
+          "stringFormatPattern": "{{finance.account}}"
+        },
+        {
+          "name": "CreditCard",
+          "type": "Bogus",
+          "stringFormatPattern": "{{finance.creditCardNumber}}"
         }
       ]
     }
